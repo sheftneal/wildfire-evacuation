@@ -1,0 +1,25 @@
+{
+    "id": "4274096E",
+    "path": "~/Documents/GitHub/wildfire-evacuation/script/read-evac-zones.R",
+    "project_path": "script/read-evac-zones.R",
+    "type": "r_source",
+    "hash": "1812863432",
+    "contents": "",
+    "dirty": false,
+    "created": 1624510339909.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "tempName": "Untitled1",
+        "cursorPosition": "3,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1624512130,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1624512130293,
+    "read_only": false,
+    "read_only_alternatives": []
+}
