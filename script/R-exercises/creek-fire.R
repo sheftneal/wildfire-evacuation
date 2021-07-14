@@ -5,7 +5,7 @@ ca <- read_rds("data/california_county_shapefile.rds")
 wf <- read_rds("data/fires/wf_data_2000_2020_clean.rds")
 
 # assign variables
-creek_fire <- wf %>% dplyr::filter(INC_NUM == "00001391") # Got INC_NUM for freek fire from spreadsheet
+creek_fire <- wf %>% dplyr::filter(INC_NUM == "00001391") # Got INC_NUM for creek fire from spreadsheet
 counties_orders <- ca %>% dplyr::filter(NAME == "Fresno" | NAME == "Madera")
 counties_warnings <- ca %>% dplyr::filter(NAME == "Mariposa")
 
