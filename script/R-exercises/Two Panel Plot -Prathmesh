@@ -1,0 +1,59 @@
+source("script/0-packages-and-functions.R")
+wf <- read_rds("data/fires/wf_data_2000_2020_clean.rds")
+#Re-organize data:
+
+plotdata <- wf %>%
+  as.data.frame() %>% #normally don't have to do this but because wf is a spatial object this makes things easier
+  mutate(year = as.numeric(YEAR_)) %>% #for some reason YEAR_ is stored as a character vector but we want it to be numeric
+  group_by(start_year) %>%
+  summarize(
+   # new_var1 = mean(existing_var1),
+    #new_var2 = sum(existing_var2),
+    number_fires_year= n(), #counts the number of observations in group
+    acres_burned_k = sum(GIS_ACRES)/1000
+  ) %>%
+  dplyr::filter(start_year >= 2000 & start_year <=2020)
+
+#Fix
+wf_of_2015 <- dplyr::filter(start_year==2015 & !is.na(GIS_ACRES)) %>% wf
+sum_of_2015 = sum(wf_of_2015$GIS_ACRES) / 1000
+plotdata$acres_burned_k[16] = sum_of_2015
+wf_of_2020 <- dplyr::filter(start_year==2020 & !is.na(GIS_ACRES)) %>% wf
+sum_of_2020 = sum(wf_of_2020$GIS_ACRES) / 1000
+plotdata$acres_burned_k[21] = sum_of_2020
+
+
+#Plot
+png(filename = "Prathmesh.png", width = 800, height = 400) 
+
+#initialize 2-column plot
+par(mfrow = c(1,2)) 
+
+#plot first column
+plot(plotdata$start_year,plotdata$number_fires_year, axes = F, xlab = "Year", lwd = 2, ylab = "Fires",  col = "blue4", type = "l")
+abline(lm(number_fires_year~as.numeric(start_year), data=plotdata), col="red", lty=2)
+#http://www.sthda.com/english/wiki/abline-r-function-an-easy-way-to-add-straight-lines-to-a-plot-using-r-software
+title("Number of fires", adj= 0.1, cex.main=2) #align left 
+
+
+#add labels
+#mtext(side = 1, text= "Year", cex = label-scale, lwd = 3) #x-axis label
+#mtext(side = 2, text = "Annual Number of Fires") #y-axis label
+#mtext(side = 3, text = "Number of Fires") #main label
+axis(1, lwd = 3) #add x-axis
+axis(2, las = 1, lwd = 3) #add y-axis
+
+#plot second column
+plot(plotdata$start_year,plotdata$acres_burned_k, axes = F, xlab = "Year", lwd = 2, ylab = "Thousands of Acres", col= "orange", type = "l")
+abline(lm(acres_burned_k~as.numeric(start_year), data=plotdata), col="red", lty=2)
+title("Burned area", adj= 0.1,cex.main=2 ) #align left
+
+#add labels
+#mtext(side = 1, text= "Year", cex = label-scale, lwd = 3) #x-axis label
+#mtext(side = 2, text = "Annual Total Burn Area") #y-axis label
+#mtext(side = 3, text = "Burned Area") #main label
+axis(1, lwd = 3) #add x-axis
+axis(2, las = 1, lwd = 3) #add y-axis
+
+
+dev.off() #ends the png call. everything between png() and dev.off() will be written to an external file      
