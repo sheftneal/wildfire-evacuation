@@ -200,7 +200,3 @@ GEOID,NAME,evacuation1,evacuation2,evacuation3,evacuation4,evacuation5,evacuatio
 6019008402,"Census Tract 84.02, Fresno County, California",,,,,,,,,,,,,,
 6019008501,"Census Tract 85.01, Fresno County, California",,,,,,,,,,,,,,
 6019008502,"Census Tract 85.02, Fresno County, California",,,,,,,,,,,,,,
-6019006406,"Census Tract 64.06, Fresno County, California. Showed up on Google Earth, not on only census tract map, not shown in the database the get_acs created.",3,5,,,,,,,,,,,,
-6019006407,"Census Tract 64.07, Fresno County, California. Showed up on Google Earth, not on only census tract map, not shown in the database the get_acs created.",4,7,8,,,,,,,,,,,
-6019006408,"Census Tract 64.08, Fresno County, California. Showed up on Google Earth, not on only census tract map, not shown in the database the get_acs created.",8,,,,,,,,,,,,,
-6019006409,"Census Tract 64.09, Fresno County, California. Showed up on Google Earth, not on only census tract map, not shown in the database the get_acs created.",6,9,,,,,,,,,,,,
