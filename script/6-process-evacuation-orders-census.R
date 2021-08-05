@@ -69,18 +69,21 @@ library(tidycensus)
                 values_from = "estimate"
                           ) %>% 
                     mutate(
-                      pop_under18  = male_under5 + male_5_9 +male_10_14 + male_15_17 + female_under5 + female_5_9 + female_10_14 + female_15_17,
-                      pop_18_45  = male_18_19 + male_20 + male_21 + male_22_24 + male_25_29 + male_30_34 + male_35_39 + male_40_44  + female_18_19 + female_20 + female_21 + female_22_24 + female_25_29 + female_30_34 + female_35_39 + female_40_44, 
-                      pop_45_70  = male_45_49 + male_50_54 + male_55_59 + male_60_61 + male_62_64 + male_65_66 + male_67_69 + female_45_49 + female_50_54 +female_55_59 + female_60_61 + female_62_64 + female_65_66 + female_67_69,
-                      pop_over70  = male_70_74 + male_80_84 + male_over85 + female_70_74 + female_80_84 + female_over85,
+                      pop1  = male_under5 + male_5_9 + female_5_9 + female_10_14 , 
+                      pop2 = male_10_14 + male_15_17 + female_under5 + female_15_17 + male_18_19+ female_18_19,
+                      pop3  =  male_20 + male_21 + male_22_24 + male_25_29   + female_20 + female_21 + female_22_24 + female_25_29  , 
+                      pop4 =  male_30_34 + male_35_39 + female_30_34 + female_35_39, 
+                      pop5 =   male_40_44 + male_45_49 + female_45_49 + female_40_44,
+                      pop6 =   male_50_54 + male_55_59 + female_50_54 +female_55_59,
+                      pop7  = male_60_61 + male_62_64 + male_65_66 + male_67_69 + female_60_61 + female_62_64 + female_65_66 + female_67_69,
+                      pop8  = male_70_74 + female_70_74 + male_75_79 + female_75_79,
+                      pop9 = male_80_84 + male_over85 + female_80_84 + female_over85,
                       pop_total = male_all + female_all
                     ) %>% 
                     dplyr::select(GEOID, starts_with("pop"))
       
-      all.equal(rowSums(pop[,c("pop_under18","pop_18_45","pop_45_70","pop_over70")]), pop$pop_total)
-      #close but there are probably some people with unknown ages that don't get into the age cateogries but are in the total
+      all.equal(rowSums(pop[,paste("pop",1:9, sep = "")]), pop$pop_total)
         
-      pop <- pop %>% mutate(pop_total = pop_under18 + pop_18_45 + pop_45_70 + pop_over70)
 
 
 
@@ -169,22 +172,19 @@ data %>% group_by(FIRE_NAME) %>% summarise(n_fire = n())
 
 #[1] x-axis year, y-axis #total population evacuated by age group
 acs$GEOID <- substr(acs$GEOID, 2, 1000) #drop leading 0
-annual_evacs_bypop <- data %>% group_by(evac_year) %>% 
-                summarise(evac_pop_under18 = sum(pop_under18, na.rm = T),
-                          evac_pop_18_45 = sum(pop_18_45, na.rm = T),
-                          evac_pop_45_70 = sum(pop_45_70, na.rm = T),
-                          evac_pop_over70 = sum(pop_over70, na.rm = T))
+
+annual_evacs_bypop <- data %>% 
+                      group_by(GEOID,evac_year) %>% 
+                      distinct() %>%  #same census tract may have been evacuated multiple times per year but we'll just count once per year
+                      left_join(acs) %>% 
+                        group_by(evac_year) %>% 
+                         summarise_at(vars(pop1:pop_total), ~sum(.x, na.rm = T))
 
 
-#x-axis year, y-axis total population evacuated by age group (a bit different than drawing)
-annual_evac_by_age <- data.frame(evac_year = 2012:2021) %>% left_join(annual_evacs_bypop) %>% 
-            mutate(
-              evac_pop_under18 = replace(evac_pop_under18, is.na(evac_pop_under18), 0),
-              evac_pop_18_45 = replace(evac_pop_18_45, is.na(evac_pop_18_45), 0),
-              evac_pop_45_70 = replace(evac_pop_45_70, is.na(evac_pop_45_70), 0),
-              evac_pop_over70 = replace(evac_pop_over70, is.na(evac_pop_over70), 0)
-              )
+#Assuming all fires in county were checked back to 2012 and 2012-2015 there were no evacuations:
 
+annual_evacs_bypop <- data.frame(evac_year = 2012:2021) %>% left_join(annual_evacs_bypop)
+annual_evacs_bypop[is.na(annual_evacs_bypop)] <- 0
 
 
 
@@ -202,43 +202,166 @@ ct_acs <- left_join(acs, ct_norder) %>% mutate(n_order = replace(n_order, is.na(
 
     #county population
     county_demo <- ct_acs %>% 
-                    summarise(
-                      pop_under18 = sum(pop_under18, na.rm = T),
-                      pop_18_45 = sum(pop_18_45, na.rm = T),
-                      pop_45_70 = sum(pop_45_70, na.rm = T),
-                      pop_over70 = sum(pop_over70, na.rm = T),
-                      med_inc = mean(med_inc, na.rm = T)
-                    ) %>% 
-      mutate(pop_total = pop_under18 + pop_18_45+ pop_45_70 + pop_over70,
-             share_under18 = pop_under18/pop_total,
-             share_18_45 = pop_18_45/pop_total,
-             share_45_70 = pop_45_70/pop_total,
-             share_over70 = pop_over70/pop_total)
+                    summarise_at(vars(pop1:pop_total), ~sum(.x, na.rm = T)) %>% 
+                  mutate(
+                   share_pop1 = pop1/pop_total,
+                   share_pop2 = pop2/pop_total,
+                   share_pop3 = pop3/pop_total,
+                   share_pop4 = pop4/pop_total,
+                   share_pop5 = pop5/pop_total,
+                   share_pop6 = pop6/pop_total,
+                   share_pop7 = pop7/pop_total,
+                   share_pop8 = pop8/pop_total,
+                   share_pop9 = pop9/pop_total
+                  )
 
-
+    
+    
     #population by age and whether they were evacuated at any time during our sample
     evacuated_demo <- ct_acs %>% 
               mutate(evacuated = as.numeric(n_order > 0)) %>% 
               group_by(evacuated) %>% 
-              summarise(
-                pop_under18 = sum(pop_under18, na.rm = T),
-                pop_18_45 = sum(pop_18_45, na.rm = T),
-                pop_45_70 = sum(pop_45_70, na.rm = T),
-                pop_over70 = sum(pop_over70, na.rm = T),
-                med_inc = mean(med_inc, na.rm = T)
-              ) %>% 
-            mutate(pop_total = pop_under18 + pop_18_45+ pop_45_70 + pop_over70,
-                   share_under18 = pop_under18/pop_total,
-                   share_18_45 = pop_18_45/pop_total,
-                   share_45_70 = pop_45_70/pop_total,
-                   share_over70 = pop_over70/pop_total)
+              summarise_at(vars(pop1:pop_total), ~sum(.x, na.rm = T))  %>% 
+                mutate(pop_total = pop1 + pop2 + pop3 + pop4 + pop5 + pop6 + pop7 + pop8 + pop9,
+                  share_pop1 = pop1/pop_total,
+                  share_pop2 = pop2/pop_total,
+                  share_pop3 = pop3/pop_total,
+                  share_pop4 = pop4/pop_total,
+                  share_pop5 = pop5/pop_total,
+                  share_pop6 = pop6/pop_total,
+                  share_pop7 = pop7/pop_total,
+                  share_pop8 = pop8/pop_total,
+                  share_pop9 = pop9/pop_total
+                )
+    
 
+      #a potentially interesting statistic:
+          evacuated_demo %>% mutate(share_pop_over60 = (pop7 + pop8 + pop9)/pop_total) %>% dplyr::select(evacuated, share_pop_over60)
+          #people over 60 make up 16% of county population but nearly 29% of evacuated population  
+              
 
     save(county_demo, evacuated_demo, annual_evac_by_age, file = "data/clean/FresnoEvacuationData.RData")
 
+    
+################## plots ###################
+    
+    #line plot - we discussed total population only:
+    plot(annual_evacs_bypop$evac_year, annual_evacs_bypop$pop_total, col =NA, axes = F, xlab = "", ylab = "", xlim = c(2012, 2021))
+    lines(annual_evacs_bypop$evac_year, annual_evacs_bypop$pop_total, col = 'black', lwd = 2)
+    points(annual_evacs_bypop$evac_year, annual_evacs_bypop$pop_total, pch = 16, cex = 2)
+    axis(1, tick = T, at = 2012:2021)
+    axis(2, tick = T, las = 2, at = seq(0, 120000, 20000), labels = c(0, paste(seq(20,120, 20), ",000", sep = "")))
+    mtext(side = 3, text = "Population in Fresno County Evacuated for Wildfire", adj = 0, cex =2,line =1 )
 
+    
+    #pie charts of age distribution. for this we use the share variables in evacuated_demo
+    blank_theme <- theme_minimal()+
+      theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        panel.border = element_blank(),
+        panel.grid=element_blank(),
+        axis.ticks = element_blank(),
+        plot.title=element_text(size=14, face="bold")
+      )
+    
+    pie_evacuated <- data.frame(Age = c("0-10","10-20","20s","30s","40s","50s","60s","70s","80+"), 
+                                share = unlist(evacuated_demo %>% dplyr::filter(evacuated == 1) %>% dplyr::select(starts_with("share_pop"))) #takes evacuated
+                                ) %>% 
+                ggplot( aes(x = "", y = share, fill = Age)) + 
+                geom_bar(width = 1, stat = "identity") +
+                coord_polar("y", start = 0) + 
+                scale_fill_manual(values=c(rainbow(10))) + #here you can change colors
+                blank_theme +
+                theme(axis.text.x=element_blank()) +
+                geom_text(aes(y = cumsum(share) + share ,label =paste(round(100*share), "%",sep="") ), size = 5)
+      
 
+    pieData_evacuated <- as.numeric(unlist(evacuated_demo %>% dplyr::filter(evacuated == 1) %>% dplyr::select(starts_with("share_pop"))))
+    pieData_NOTevacuated <- as.numeric(unlist(evacuated_demo %>% dplyr::filter(evacuated == 0) %>% dplyr::select(starts_with("share_pop"))))
+    pieData_county <- county_demo %>% dplyr::select(starts_with("share_")) #if you want to compare to overall county pop regardless of evacuation status
+    
+    pie(pieData_evacuated, 
+        col = rainbow(10), 
+        labels = paste(c("0-10","10-20","20s","30s","40s","50s","60s","70s","80+"), " (",round(input*100),"%)",sep="")
+        )
+    mtext(side = 3, text = "Age distribution of evacuated populations",adj = 0, cex = 3)    
+    
+    #or maybe you prefer a legend       
+    pie(pieData_evacuated, 
+        col = rainbow(10), 
+        labels = paste(round(input*100),"%",sep=""),cex=1.25,
+        radius = 0.75
+      )
+    legend(x = "bottom",horiz = T, fill = rainbow(10), legend = c("0-10","10-20","20s","30s","40s","50s","60s","70s","80+"), bty = "n",cex=1.25)
+    mtext(side = 3, text = "Age distribution of evacuated populations",adj = 0, cex = 3)    
+    
+    
+    
+  #last option is a doughnut plot  
+  source("script/doughnut.R") #user written function
+    
+    par(mfrow = c(1,2))
+    
+    doughnut(pieData_evacuated, 
+             inner.radius= 0.5,
+             outer.radius = 1, 
+             col= rainbow(10) ,lty =1, density = NA,
+             labels = c("0-10","10-20","20s","30s","40s","50s","60s","70s","80+"),cex.label = 1.5
+             )
+    mtext(side = 3, text = "Fresno County Population Evacuated",cex=1.5, adj = 0)
+    
+    
+    
+    doughnut(pieData_NOTevacuated, 
+             inner.radius= 0.5,
+             outer.radius = 1, 
+             col= rainbow(10) ,lty =1, density = NA,
+             labels = c("0-10","10-20","20s","30s","40s","50s","60s","70s","80+"),cex.label = 1.5
+    )
 
-
-
-
+    mtext(side = 3, text = "Fresno County Population Not Evacuated",cex=1.5, adj = 0)
+    
+    
+    
+    
+    #or can do it with barplot of the age disribution (we discussed not including but i added here just in case)
+    
+    par(mfrow = c(1,2))
+    
+    barplot(pieData_evacuated,axes = F, names = c("<10", paste(seq(10,70,10), "-",seq(20,80,10), sep = ""), ">80"), col =rainbow(10), ylim = c(0, .25))
+    mtext(side = 1, text = "Age Group",line=3,cex=1.5)
+    axis(2, tick = T, las = 2)
+    mtext(side = 2, "Share of population", line=3,cex=1.5)
+    mtext(side =3, text = "Evacuated ",cex=2,adj = 0,line=1)
+    
+    
+    
+    barplot(pieData_NOTevacuated,axes = F, names = c("<10", paste(seq(10,70,10), "-",seq(20,80,10), sep = ""), ">80"), ylim = c(0,.25),col =rainbow(10))
+    mtext(side = 1, text = "Age Group",line=3,cex=1.5)
+    axis(2, tick = T, las = 2, at = seq(0,4000,1000), labels = c(0,"1,000","2,000","3,000","4,000"))
+    mtext(side =3, text = "Not evacuated",cex=2,adj = 0,line=1)
+    
+    
+    #or side by side [NOTE: I think this may be the most clear way to show differences]
+    
+    
+    #add function to define transparency of colors
+    
+    #add transparency to any color	
+    add.alpha <- function(col, alpha=1){
+      if(missing(col))
+        stop("Please provide a vector of colours.")
+      apply(sapply(col, col2rgb)/255, 2, 
+            function(x) 
+              rgb(x[1], x[2], x[3], alpha=alpha))  
+    }	
+    
+    par(mfrow = c(1,1))
+    barplot(rbind(pieData_evacuated,pieData_NOTevacuated), beside = T ,axes = F, names = c("<10", paste(seq(10,70,10), "-",seq(20,80,10), sep = ""), ">80"), col = add.alpha(rep(rainbow(10),2), c(1, .25)), ylim = c(0, .2))
+    mtext(side = 1, text = "Age Range",line=3,cex=1.5)
+    axis(2, tick = T, las = 2, at = seq(0,.2, .05), labels = paste(seq(0,20,5), "%", sep=""))
+    mtext(side = 2, "Share of Group Population", line=3,cex=1.5)
+    legend(x = "topright", legend = c("Evacuated", "Not Evacuated"), fill = c('black', add.alpha('black', .25)),bty = "n",cex=2, title = "Group")
+    
+    
