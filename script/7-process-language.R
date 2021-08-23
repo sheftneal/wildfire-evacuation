@@ -9,7 +9,8 @@ v18 <- load_variables(2018, "acs5", cache = TRUE)
 #read in census data
 pop <-  get_acs(
   geography = "tract", 
-  variables = c(  only_english = "B06007_002",
+  #I don't think these are quite right. Check out the C16001_ series of variables
+  variables = c(  only_english = "B06007_002", 
                   speak_spanish_and_speak_english_very_well = "B06007_004",
                   speak_other_languages_and_speak_english_very_well = "B06007_007",
                   speak_spanish_and_speak_english_not_well = "B06007_005",
