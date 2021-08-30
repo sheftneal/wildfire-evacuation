@@ -169,6 +169,7 @@ data %>% group_by(FIRE_NAME) %>% summarise(n_fire = n())
 ############################################################################################################
 
 #prep data for figures:
+#(add comments 171-243)
 
 #[1] x-axis year, y-axis #total population evacuated by age group
 acs$GEOID <- substr(acs$GEOID, 2, 1000) #drop leading 0
