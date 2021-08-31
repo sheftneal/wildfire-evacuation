@@ -172,36 +172,64 @@ data %>% group_by(FIRE_NAME) %>% summarise(n_fire = n())
 #(add comments 171-243)
 
 #[1] x-axis year, y-axis #total population evacuated by age group
-acs$GEOID <- substr(acs$GEOID, 2, 1000) #drop leading 0
 
+
+#GEOID is the census tract identifier but in the ACS data it has a leading 0 before the id which doesn't match our data set so drop leading 0
+#drop leading 0 see ?substring() for details but we're taking 2nd character in GEOID through 1000th character. 
+#Obvis not 1000 characters but wanted to make sure didn't drop any characters on accident (eg if 11 characters and you do substr(x, 2,9) then will be missing 10th and 11th character
+# if you put number greater than longest string length it just takes everything so i put 1000
+acs$GEOID <- substr(acs$GEOID, 2, 1000)
+
+
+#to get annual info for each census tract by year combo
 annual_evacs_bypop <- data %>% 
                       group_by(GEOID,evac_year) %>% 
-                      distinct() %>%  #same census tract may have been evacuated multiple times per year but we'll just count once per year
-                      left_join(acs) %>% 
-                        group_by(evac_year) %>% 
-                         summarise_at(vars(pop1:pop_total), ~sum(.x, na.rm = T))
+                      distinct() %>%  #same census tract may have been evacuated multiple times per year but we'll just count once per year. dinstinc() takes every combo of GEOID, year combo once.
+                      left_join(acs) %>% #bring in ACS data (will merge on GEOID)
+                        group_by(evac_year) %>% #now for each year summarise totals
+                         summarise_at(vars(pop1:pop_total),#pop1 is the leftmost column we want to sum, pop_total is the rightmost. will also tak all cols between these two. 
+                                      ~sum(.x, na.rm = T)) #sum(.x) is summarise_at() syntax telling it to take all the variables (ie pop1 is initial x value, then pop2, then... all the way to pop_total being the final x)
+
+#now we have data frame where rows are years and cols are different pop group totals
 
 
 #Assuming all fires in county were checked back to 2012 and 2012-2015 there were no evacuations:
 
+#creates empty data frame with all years in first column and merges with evac data
+# then replaces NA with 0. Before our evac data only had observations for years with evacs. 
+#Now we have a data frame with obs for every year regardless of whether there was evac
 annual_evacs_bypop <- data.frame(evac_year = 2012:2021) %>% left_join(annual_evacs_bypop)
 annual_evacs_bypop[is.na(annual_evacs_bypop)] <- 0
 
 
 
 #evacuated at any point age distribution
-ct_norder <- read.csv("data/clean/Fresno_Census_FilledIn.csv", skip = 2) %>% 
-  dplyr::select(GEOID, NAME, starts_with("evacuation")) %>% 
-  mutate(GEOID = as.character(GEOID))
+
+#read in data
+ct_norder <- read.csv("data/clean/Fresno_Census_FilledIn.csv", skip = 2) %>% #skip = 2 because first two rows of excel data file are not data we want to read in
+  dplyr::select(GEOID, NAME, starts_with("evacuation")) %>% #keep the variables GEOID, NAME, and anything that begins with "evacuation"
+  mutate(GEOID = as.character(GEOID)) #convert GEOID from number to character since other data sets we're using store this var as character. all need to be same format for merges.
 
 
 #count # evac orders per census tract
-ct_norder$n_order <- apply(ct_norder[,paste("evacuation",1:12, sep = "")], 1, function(x){sum(!is.na(x))})
+
+#define a new variable called "n_order" that takes the sum across rows for the 14 evacuation variable
+ct_norder$n_order <- apply(ct_norder[,paste("evacuation",1:14, sep = "")], 1, function(x){sum(!is.na(x))}) #1:14 because data frame I'm using has 14 evacuation variables
+#you could get the same thing as line 217 in many different ways. For example:
+number_orders <- ct_norder %>% dplyr::select(starts_with("evacuation")) %>% rowSums(na.rm = T)
+ct_norder <- ct_norder %>% mutate(n_order = number_orders)
+
+#only keep census tracts with orders
 ct_norder <- ct_norder %>% dplyr::filter(n_order > 0) %>% dplyr::select(GEOID, n_order)
 
+#combine acs data with the count of evac orders by census tract
+#but the n_order variable will be missing for every census tract that never had a fire
+# so those values are currently missing after the join but we want all of those values to be 0
 ct_acs <- left_join(acs, ct_norder) %>% mutate(n_order = replace(n_order, is.na(n_order), 0))
 
-    #county population
+    #no take this data frame and summarise across all the pop variables.
+  #pop1:pop_total means take every column including and to the right of pop1 through the column pop_total and sum them 
+#then we calculate pop shares
     county_demo <- ct_acs %>% 
                     summarise_at(vars(pop1:pop_total), ~sum(.x, na.rm = T)) %>% 
                   mutate(
@@ -220,10 +248,10 @@ ct_acs <- left_join(acs, ct_norder) %>% mutate(n_order = replace(n_order, is.na(
     
     #population by age and whether they were evacuated at any time during our sample
     evacuated_demo <- ct_acs %>% 
-              mutate(evacuated = as.numeric(n_order > 0)) %>% 
+              mutate(evacuated = as.numeric(n_order > 0)) %>% #create binary dummy var == 1 if there were evac orders in tract, 0 else
               group_by(evacuated) %>% 
-              summarise_at(vars(pop1:pop_total), ~sum(.x, na.rm = T))  %>% 
-                mutate(pop_total = pop1 + pop2 + pop3 + pop4 + pop5 + pop6 + pop7 + pop8 + pop9,
+              summarise_at(vars(pop1:pop_total), ~sum(.x, na.rm = T))  %>% #separate pop totals for groups that were and were not evac
+                mutate(pop_total = pop1 + pop2 + pop3 + pop4 + pop5 + pop6 + pop7 + pop8 + pop9, #calculations from those pop totals
                   share_pop1 = pop1/pop_total,
                   share_pop2 = pop2/pop_total,
                   share_pop3 = pop3/pop_total,
