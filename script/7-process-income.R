@@ -1,7 +1,7 @@
 source("script/0-packages-and-functions.R")
 library(tidycensus)
 
-census_api_key("")
+census_api_key("f5c6e020a6aae7ba5420a4051ad53eee38c621fa")
 
 #read in census data
 pop <-  get_acs(
@@ -201,13 +201,15 @@ evacuated_demo <- ct_acs %>%
 
 ################## plots ###################
 
-#line plot - we discussed total population only:
-plot(annual_evacs_bypop$evac_year, annual_evacs_bypop$pop_total, col =NA, axes = F, xlab = "", ylab = "", xlim = c(2012, 2020))
-lines(annual_evacs_bypop$evac_year, annual_evacs_bypop$pop_total, col = 'darkorchid4', lwd = 2)
-points(annual_evacs_bypop$evac_year, annual_evacs_bypop$pop_total, col = 'darkorchid1', pch = 16, cex = 2)
-axis(1, tick = T, at = 2012:2020)
-axis(2, tick = T, las = 2, at = seq(0, 120000, 20000), labels = c(0, paste(seq(20,120, 20), ",000", sep = "")))
-#mtext(side = 3, text = "Population in Fresno County Evacuated for Wildfire", adj = 0, cex =2,line =1 )
+# AVERAGE INCOME MAP OF COUNTY SIDE BY SIDE PLOTS
+fresno_income <- get_acs(state = "06", county = "019", geography = "tract", 
+                         variables = "B06011_001", geometry = TRUE)
+# plotting income across fresno county
+fresno_income %>%
+  ggplot(aes(fill = estimate)) + 
+  geom_sf(color = NA) + 
+  coord_sf(crs = 26911) + 
+  scale_fill_viridis_c(option = "viridis")
 
 #pie charts of income distribution. for this we use the share variables in evacuated_demo
 blank_theme <- theme_minimal()+
@@ -236,64 +238,8 @@ pieData_evacuated <- as.numeric(unlist(evacuated_demo %>% dplyr::filter(evacuate
 pieData_NOTevacuated <- as.numeric(unlist(evacuated_demo %>% dplyr::filter(evacuated == 0) %>% dplyr::select(starts_with("share_pop"))))
 pieData_county <- county_demo %>% dplyr::select(starts_with("share_")) #if you want to compare to overall county pop regardless of evacuation status
 
-pie(pieData_evacuated, 
-    col = rainbow(8), 
-    labels = paste(c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"), " (",round(input*100),"%)",sep="")
-)
-mtext(side = 3, text = "Inc distribution of evacuated populations",adj = 0, cex = 3)    
-
-
-
-#last option is a doughnut plot  
-source("script/doughnut.R") #user written function
-
-par(mfrow = c(1,2))
-
-doughnut(pieData_evacuated, 
-         inner.radius= 0.5,
-         outer.radius = 1, 
-         col= rainbow(8),lty =1, density = NA,
-         labels = c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"),cex.label = 1.5
-)
-mtext(side = 3, text = "Fresno County Population Evacuated",cex=1.5, adj = 0)
-
-
-
-doughnut(pieData_NOTevacuated, 
-         inner.radius= 0.5,
-         outer.radius = 1, 
-         col= rainbow(8) ,lty =1, density = NA,
-         labels = c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"),cex.label = 1.5
-)
-
-mtext(side = 3, text = "Fresno County Population Not Evacuated",cex=1.5, adj = 0)
-
-
-
-
-#or can do it with barplot of the income disribution (we discussed not including but i added here just in case)
-
-par(mfrow = c(1,2))
-
-barplot(pieData_evacuated,axes = F, names = c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"), col =rainbow(8), ylim = c(0, .25))
-mtext(side = 1, text = "Income Group",line=3,cex=1.5)
-axis(2, tick = T, las = 2)
-mtext(side = 2, "Share of population", line=3,cex=1.5)
-mtext(side =3, text = "Evacuated ",cex=2,adj = 0,line=1)
-
-
-
-barplot(pieData_NOTevacuated,axes = F, names = c("<10", paste(seq(10,70,10), "-",seq(20,80,10), sep = ""), ">80"), ylim = c(0,.25),col =rainbow(10))
-mtext(side = 1, text = "Income Group",line=3,cex=1.5)
-axis(2, tick = T, las = 2, at = seq(0,4000,1000), labels = c(0,"1,000","2,000","3,000","4,000"))
-mtext(side =3, text = "Not evacuated",cex=2,adj = 0,line=1)
-
-
 #or side by side [NOTE: I think this may be the most clear way to show differences]
-
-
 #add function to define transparency of colors
-
 #add transparency to any color	
 add.alpha <- function(col, alpha=1){
   if(missing(col))
@@ -304,10 +250,64 @@ add.alpha <- function(col, alpha=1){
 }	
 
 par(mfrow = c(1,1))
-barplot(rbind(pieData_evacuated,pieData_NOTevacuated), beside = T ,axes = F, names = c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"), col = add.alpha(rep(rainbow(9),2), c(1, .25)), ylim = c(0, .2))
+barplot(rbind(pieData_evacuated,pieData_NOTevacuated), beside = T ,axes = F, names = c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"), col = add.alpha(rep('black',2), c(1, .25)), ylim = c(0, .2))
 mtext(side = 1, text = "Income Range (in thousands of dollars)",line=3,cex=1.5)
 axis(2, tick = T, las = 2, at = seq(0,.2, .05), labels = paste(seq(0,20,5), "%", sep=""))
 mtext(side = 2, "Share of Group Population", line=3,cex=1.5)
+
+# pie(pieData_evacuated, 
+#     col = rainbow(8), 
+#     labels = paste(c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"), " (",round(input*100),"%)",sep="")
+# )
+# mtext(side = 3, text = "Inc distribution of evacuated populations",adj = 0, cex = 3)    
+# 
+# 
+# 
+# #last option is a doughnut plot  
+# source("script/doughnut.R") #user written function
+# 
+# par(mfrow = c(1,2))
+# 
+# doughnut(pieData_evacuated, 
+#          inner.radius= 0.5,
+#          outer.radius = 1, 
+#          col= rainbow(8),lty =1, density = NA,
+#          labels = c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"),cex.label = 1.5
+# )
+# mtext(side = 3, text = "Fresno County Population Evacuated",cex=1.5, adj = 0)
+# 
+# 
+# 
+# doughnut(pieData_NOTevacuated, 
+#          inner.radius= 0.5,
+#          outer.radius = 1, 
+#          col= rainbow(8) ,lty =1, density = NA,
+#          labels = c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"),cex.label = 1.5
+# )
+# 
+# mtext(side = 3, text = "Fresno County Population Not Evacuated",cex=1.5, adj = 0)
+# 
+# 
+# 
+# 
+# #or can do it with barplot of the income disribution (we discussed not including but i added here just in case)
+# 
+# par(mfrow = c(1,2))
+# 
+# barplot(pieData_evacuated,axes = F, names = c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"), col =rainbow(8), ylim = c(0, .25))
+# mtext(side = 1, text = "Income Group",line=3,cex=1.5)
+# axis(2, tick = T, las = 2)
+# mtext(side = 2, "Share of population", line=3,cex=1.5)
+# mtext(side =3, text = "Evacuated ",cex=2,adj = 0,line=1)
+# 
+# 
+# 
+# barplot(pieData_NOTevacuated,axes = F, names = c("<10", paste(seq(10,70,10), "-",seq(20,80,10), sep = ""), ">80"), ylim = c(0,.25),col =rainbow(10))
+# mtext(side = 1, text = "Income Group",line=3,cex=1.5)
+# axis(2, tick = T, las = 2, at = seq(0,4000,1000), labels = c(0,"1,000","2,000","3,000","4,000"))
+# mtext(side =3, text = "Not evacuated",cex=2,adj = 0,line=1)
+
+
 
 
 
