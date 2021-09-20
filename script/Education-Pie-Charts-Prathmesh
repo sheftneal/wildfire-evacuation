@@ -254,11 +254,17 @@ pieData_evacuated <- as.numeric(unlist(evacuated_demo %>% dplyr::filter(evacuate
 pieData_NOTevacuated <- as.numeric(unlist(evacuated_demo %>% dplyr::filter(evacuated == 0) %>% dplyr::select(starts_with("share_pop"))))
 pieData_county <- county_demo %>% dplyr::select(starts_with("share_")) #if you want to compare to overall county pop regardless of evacuation status
 
+#First Plot-Evacuated Populations 
 pie(pieData_evacuated, 
-    # col = rainbow(1), 
     col= c("#7BCCC4" ,"#4EB3D3", "#2B8CBE", "#08589E"), 
-   # col = "darkred", <-- If you want a solid color 
     labels = paste(c("Highschool Diploma/GED or less", "Bachelor's Degree or Some College", "Master's Degree", "Professional School or Doctorate Degree"), " (",round(pieData_evacuated*100),"%)",sep="")
 )
+
+#Second Plot-Whole County Population 
+plot2<-pie(as.numeric(pieData_county), 
+           col= c("#7BCCC4" ,"#4EB3D3", "#2B8CBE", "#08589E"), 
+           labels = paste(c("Highschool Diploma/GED or less", "Bachelor's Degree or Some College", "Master's Degree", "Professional School or Doctorate Degree"), " (",round(as.numeric(pieData_county)*100),"%)",sep="")
+)
+
 mtext(side = 3, text = "Education Distribution of Evacuated Populations",adj = 0, cex = 3)    
 #dev.off()
