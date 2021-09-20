@@ -283,11 +283,11 @@ pieData_county <- county_demo %>% dplyr::select(starts_with("share_")) #if you w
 # side by side: pie chart of what percent of the population is and is not proficient in english - pie chart of the percentage of the time proficient and not proficient folks are being evacuated
 # chart #1
 slices <- c(mean(pop1$perc_proficient) / 100, 1 - mean(pop1$perc_proficient) / 100) #proficiency of fresno county
-lbls <- c("Proficient English", "Not Proficient English")
+lbls = paste(c("Proficient English", "Not Proficient English"), " (",round(pieData_county*100),"%)",sep="")
 pie(slices, labels = lbls, main="Pie Chart of English Proficiency for Evacuated Populations")
 #chart #2
 slices <- c(pieData_evacuated[1], pieData_evacuated[2]) #proficiency of fresno county evacuated population
-lbls <- c("Proficient English", "Not Proficient English")
+lbls = paste(c("Proficient English", "Not Proficient English"), " (",round(pieData_evacuated*100),"%)",sep="")
 pie(slices, labels = lbls, main="Pie Chart of English Proficiency for Evacuated Populations")
 
 
