@@ -240,7 +240,7 @@ evacuated_demo <- ct_acs %>%
 
 # graph the percentage of each census tract that is proficient in english on a map of Fresno
 fresno %>%
-  ggplot(aes(fill = pop1$perc_proficient)) + 
+  ggplot(aes(fill = 100 - pop1$perc_proficient)) + 
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
   scale_fill_viridis_c(option = "viridis")
@@ -252,6 +252,8 @@ fresno %>%
   coord_sf(crs = 26911) + 
   scale_fill_viridis_c(option = "viridis")
 
+# percentage of the not proficient population that is only proficient in spanish
+mean(pop2$only_proficient_spanish) / (mean(pop2$only_proficient_spanish) + mean(pop2$only_proficient_not_english_or_spanish))
 
 
 # GET PIE CHART DATA READY
