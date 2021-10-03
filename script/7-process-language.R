@@ -296,3 +296,136 @@ pie(slices, labels = lbls, main="Pie Chart of English Proficiency for Evacuated 
 # get a statistic on how many non-proficient people have been evacuated since 2013. - 7265 people for Fresno
 num_non_proficient_evacuees_since_2013 = annual_evacs_bypop[1,3] + annual_evacs_bypop[2,3] + annual_evacs_bypop[3,3] + annual_evacs_bypop[4,3] + annual_evacs_bypop[5,3]+ annual_evacs_bypop[6,3] + annual_evacs_bypop[7,3] + annual_evacs_bypop[8,3] + annual_evacs_bypop[9,3] + annual_evacs_bypop[10,3]
 
+
+
+
+
+
+
+
+
+
+
+
+# -------------------------------
+# get a statistic on how many people have been evacuated since 2013 who are only proficient in spanish - 6573 for Fresno
+
+#re-organize:
+# population of proficient in english, only proficient in spanish, and only proficient in a language that isn't english or spanish
+pop2 <- pop %>% dplyr::select(-moe) %>% 
+  pivot_wider(
+    names_from = "variable",
+    values_from = "estimate"
+  ) %>% 
+  mutate(
+    proficient_english = only_english + spanish_english_well + frenchhaitiuncajun_english_well +
+      german_english_well + russian_polish_slavic_english_well + otherindoeuropean_english_well +
+      korean_english_well + chinese_english_well + vietnamese_english_well + tagalog_english_well + 
+      otherasian_english_well + arabic_english_well + other_english_well, 
+    
+    only_proficient_spanish = spanish_english_not_well,
+    
+    only_proficient_not_english_or_spanish = frenchhaitiuncajun_english_not_well + german_english_not_well + 
+      russian_polish_slavic_english_not_well + otherindoeuropean_english_not_well + korean_english_not_well + 
+      chinese_english_not_well + vietnamese_english_not_well + tagalog_english_not_well + otherasian_english_not_well + 
+      arabic_english_not_well + other_english_not_well,
+    
+    perc_only_proficient_spanish = 100 * only_proficient_spanish / total,
+    pop2_total = proficient_english + only_proficient_spanish + only_proficient_not_english_or_spanish
+    
+  )
+
+
+# Income -- need this in order to make the prep data for figures part work.
+income <- 
+  get_acs(
+    geography = "tract", 
+    variables =  c(med_income = "B06011_001"), 
+    year = 2018,
+    state = "CA",
+    county = "Fresno"
+  ) 
+income <- income %>% dplyr::select(-variable, -moe) %>% rename(med_inc = estimate)  
+acs <- left_join(income, pop2)
+#acs <- left_join(income, pop2)
+
+
+############################################################################################################
+
+# Read in census tract mapping
+ct <- read.csv("data/clean/Fresno_Census_FilledIn.csv", skip = 2) %>% 
+  dplyr::select(GEOID, NAME, starts_with("evacuation")) %>% 
+  mutate(GEOID = as.character(GEOID))
+
+
+# Count num evac orders per census tract
+ct$n_order <- apply(ct[,paste("evacuation",1:12, sep = "")], 1, function(x){sum(!is.na(x))})
+
+# Reorganize so each row is a census tract - evacuation ID combination
+ct <- ct %>% 
+  dplyr::filter(n_order > 0) %>%  #filter to census tracts with orders
+  pivot_longer(
+    cols = evacuation1:evacuation14,
+    names_to = "Evacuation.Index",
+    values_to = "Evacuation.ID"
+  ) %>% 
+  dplyr::select(-Evacuation.Index) %>% 
+  dplyr::filter(!is.na(Evacuation.ID))
+
+
+# Bring in and clean up evacuation order database
+evacs <- read.csv("data/clean/Wildfire Evacuation Order Database - Fresno & Madera County Fires.csv") %>% 
+  dplyr::select(-starts_with("X")) %>% 
+  dplyr::select(Evacuation.ID, FIRE_NAME, GIS_ACRES,evacuation.order.type,evac_date_issue)
+
+
+# Join data sets
+data <- left_join(ct, evacs)
+nrow(data) #47 census tract-evacuation order combinations
+
+# What is date range of evacuations?
+data$evac_date_issue <- as.Date(data$evac_date_issue, format = "%m/%d/%y")
+min(data$evac_date_issue)
+max(data$evac_date_issue)
+
+# Create year and month variables
+data <- data %>% 
+  mutate(
+    evac_year = lubridate::year(evac_date_issue),
+    evac_month = lubridate::month(evac_date_issue)
+  )
+
+# How many census tracts did each fire cause evacuation for?
+data %>% group_by(FIRE_NAME) %>% summarise(n_fire = n())
+# --> 7 fires causes evacuations with CREEK fire causing by far the most
+
+################################################################################################################################  
+
+# Prep data for figures:
+
+#[1] x-axis year, y-axis #total population evacuated by age group
+
+#GEOID is the census tract identifier but in the ACS data it has a leading 0 before the id which doesn't match our data set so drop leading 0
+#drop leading 0 see ?substring() for details but we're taking 2nd character in GEOID through 1000th character. 
+#Obvis not 1000 characters but wanted to make sure didn't drop any characters on accident (eg if 11 characters and you do substr(x, 2,9) then will be missing 10th and 11th character
+# if you put number greater than longest string length it just takes everything so i put 1000
+acs$GEOID <- substr(acs$GEOID, 2, 1000)
+
+
+#to get annual info for each census tract by year combo
+annual_evacs_bypop2 <- data %>% 
+  group_by(GEOID,evac_year) %>% 
+  distinct() %>%  #same census tract may have been evacuated multiple times per year but we'll just count once per year. dinstinc() takes every combo of GEOID, year combo once.
+  left_join(acs) %>% #bring in ACS data (will merge on GEOID)
+  group_by(evac_year) %>% #now for each year summarise totals
+  summarise_at(vars(only_proficient_spanish:pop2_total),#pop2 is the leftmost column we want to sum, pop_total is the rightmost. will also tak all cols between these two. 
+               ~sum(.x, na.rm = T)) #sum(.x) is summarise_at() syntax telling it to take all the variables (ie pop2 is initial x value, then pop2, then... all the way to pop_total being the final x)
+
+#creates empty data frame with all years in first column and merges with evac data
+# then replaces NA with 0. Before our evac data only had observations for years with evacs. 
+#Now we have a data frame with obs for every year regardless of whether there was evac
+annual_evacs_bypop <- data.frame(evac_year = 2012:2021) %>% left_join(annual_evacs_bypop)
+annual_evacs_bypop[is.na(annual_evacs_bypop)] <- 0
+
+# get a statistic on how many non-proficient people have been evacuated since 2013. - 7265 people for Fresno
+num_only_proficient_in_spanish_evacuees_since_2013 = annual_evacs_bypop2[1, 2] + annual_evacs_bypop2[2, 2] + annual_evacs_bypop2[3, 2] + annual_evacs_bypop2[4, 2] + annual_evacs_bypop2[5, 2]
