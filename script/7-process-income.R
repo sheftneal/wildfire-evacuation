@@ -236,7 +236,7 @@ pie_evacuated <- data.frame(Inc = c("<10","10-15","15-25","25-35","35-50","50-65
 
 pieData_evacuated <- as.numeric(unlist(evacuated_demo %>% dplyr::filter(evacuated == 1) %>% dplyr::select(starts_with("share_pop"))))
 pieData_NOTevacuated <- as.numeric(unlist(evacuated_demo %>% dplyr::filter(evacuated == 0) %>% dplyr::select(starts_with("share_pop"))))
-pieData_county <- county_demo %>% dplyr::select(starts_with("share_")) #if you want to compare to overall county pop regardless of evacuation status
+pieData_county <- as.numeric(county_demo %>% dplyr::select(starts_with("share_"))) #if you want to compare to overall county pop regardless of evacuation status
 
 #or side by side [NOTE: I think this may be the most clear way to show differences]
 #add function to define transparency of colors
@@ -250,7 +250,7 @@ add.alpha <- function(col, alpha=1){
 }	
 
 par(mfrow = c(1,1))
-barplot(rbind(pieData_evacuated,pieData_NOTevacuated), beside = T ,axes = F, names = c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"), col = add.alpha(rep('black',2), c(1, .25)), ylim = c(0, .2))
+barplot(rbind(pieData_evacuated,pieData_county), beside = T ,axes = F, names = c("<10","10-15","15-25","25-35","35-50","50-65","65-75","75+"), col = add.alpha(rep('black',2), c(1, .25)), ylim = c(0, .2))
 mtext(side = 1, text = "Income Range (in thousands of dollars)",line=3,cex=1.5)
 axis(2, tick = T, las = 2, at = seq(0,.2, .05), labels = paste(seq(0,20,5), "%", sep=""))
 mtext(side = 2, "Share of Group Population", line=3,cex=1.5)
