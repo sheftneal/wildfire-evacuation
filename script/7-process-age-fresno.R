@@ -302,7 +302,7 @@ pie_evacuated <- data.frame(Age = c("0-10","10-20","20s","30s","40s","50s","60s"
   
 pieData_evacuated <- as.numeric(unlist(evacuated_demo %>% dplyr::filter(evacuated == 1) %>% dplyr::select(starts_with("share_pop"))))
 pieData_NOTevacuated <- as.numeric(unlist(evacuated_demo %>% dplyr::filter(evacuated == 0) %>% dplyr::select(starts_with("share_pop"))))
-pieData_county <- county_demo %>% dplyr::select(starts_with("share_")) #if you want to compare to overall county pop regardless of evacuation status
+pieData_county <- as.numeric(county_demo %>% dplyr::select(starts_with("share_"))) #if you want to compare to overall county pop regardless of evacuation status
 
 
 #SIDE BY SIDE BAR PLOT OF AGE DISTRIBUTION
@@ -317,7 +317,7 @@ add.alpha <- function(col, alpha=1){
 }	
 
 par(mfrow = c(1,1))
-barplot(rbind(pieData_evacuated,pieData_NOTevacuated), beside = T ,axes = F, names = c("<10", paste(seq(10,70,10), "-",seq(20,80,10), sep = ""), ">80"), col = add.alpha(rep('black',2), c(1, .25)), ylim = c(0, .2))
+barplot(rbind(pieData_evacuated,pieData_county), beside = T ,axes = F, names = c("<10", paste(seq(10,70,10), "-",seq(20,80,10), sep = ""), ">80"), col = add.alpha(rep('black',2), c(1, .25)), ylim = c(0, .2))
 mtext(side = 1, text = "Age Range",line=3,cex=1.5)
 axis(2, tick = T, las = 2, at = seq(0,.2, .05), labels = paste(seq(0,20,5), "%", sep=""))
 mtext(side = 2, "Share of Group Population", line=3,cex=1.5)
