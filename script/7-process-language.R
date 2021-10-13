@@ -243,14 +243,14 @@ fresno %>%
   ggplot(aes(fill = 100 - pop1$perc_proficient)) + 
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
-  scale_fill_viridis_c(option = "viridis")
+  scale_fill_viridis_c(option = "magma")
 
 # graph the percentage of each census tract that is only proficient in spanish on a map of Fresno
 fresno %>%
   ggplot(aes(fill = pop2$perc_only_proficient_spanish)) + 
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
-  scale_fill_viridis_c(option = "viridis")
+  scale_fill_viridis_c(option = "magma")
 
 # percentage of the not proficient population that is only proficient in spanish
 mean(pop2$only_proficient_spanish) / (mean(pop2$only_proficient_spanish) + mean(pop2$only_proficient_not_english_or_spanish))
@@ -286,11 +286,11 @@ pieData_county <- county_demo %>% dplyr::select(starts_with("share_")) #if you w
 # chart #1
 slices <- c(mean(pop1$perc_proficient) / 100, 1 - mean(pop1$perc_proficient) / 100) #proficiency of fresno county
 lbls = paste(c("Proficient English", "Not Proficient English"), " (",round(pieData_county*100),"%)",sep="")
-pie(slices, labels = lbls, main="Pie Chart of English Proficiency for Evacuated Populations")
+pie(slices, labels = lbls, main="Pie Chart of English Proficiency for Evacuated Populations", col = c("white", "grey"))
 #chart #2
 slices <- c(pieData_evacuated[1], pieData_evacuated[2]) #proficiency of fresno county evacuated population
 lbls = paste(c("Proficient English", "Not Proficient English"), " (",round(pieData_evacuated*100),"%)",sep="")
-pie(slices, labels = lbls, main="Pie Chart of English Proficiency for Evacuated Populations")
+pie(slices, labels = lbls, main="Pie Chart of English Proficiency for Evacuated Populations", col = c("white", "grey"))
 
 
 # get a statistic on how many non-proficient people have been evacuated since 2013. - 7265 people for Fresno

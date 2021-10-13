@@ -209,7 +209,7 @@ fresno_income %>%
   ggplot(aes(fill = estimate)) + 
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
-  scale_fill_viridis_c(option = "viridis")
+  scale_fill_viridis_c(option = "magma")
 
 #pie charts of income distribution. for this we use the share variables in evacuated_demo
 blank_theme <- theme_minimal()+

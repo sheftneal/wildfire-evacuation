@@ -259,13 +259,13 @@ fresno %>%
   ggplot(aes(fill = estimate)) + 
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
-  scale_fill_viridis_c(option = "viridis")
+  scale_fill_viridis_c(option = "magma")
 # plotting number of evacuation orders across fresno county
 fresno %>%
   ggplot(aes(fill = num_evacuation_orders)) + 
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
-  scale_fill_viridis_c(option = "viridis")
+  scale_fill_viridis_c(option = "magma")
 
 
    
@@ -321,7 +321,7 @@ barplot(rbind(pieData_evacuated,pieData_county), beside = T ,axes = F, names = c
 mtext(side = 1, text = "Age Range",line=3,cex=1.5)
 axis(2, tick = T, las = 2, at = seq(0,.2, .05), labels = paste(seq(0,20,5), "%", sep=""))
 mtext(side = 2, "Share of Group Population", line=3,cex=1.5)
-legend(x = "topright", legend = c("Evacuated", "Not Evacuated"), fill = c('black', add.alpha('black', .25)),bty = "n",cex=2, title = "Group")
+legend(x = "topright", legend = c("Evacuated", "Total Population"), fill = c('black', add.alpha('black', .25)),bty = "n",cex=2, title = "Group")
 
 # with rainbow instead of b&w
 #par(mfrow = c(1,1))
