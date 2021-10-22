@@ -3,36 +3,30 @@ library(tidycensus)
 
 #census_api_key("")
 
+
+COUNTY = "Alameda"
+
+
 #read in census data
 pop <-  get_acs(
   geography = "tract", 
   variables = c(  
                   race_tot = "B03002_001",
-                  race_nh_tot = "B03002_002",
                   race_nh_wh = "B03002_003",
                   race_nh_bk = "B03002_004",
                   race_nh_na = "B03002_005",
                   race_nh_as = "B03002_006",
                   race_nh_hw = "B03002_007",
                   race_nh_ot = "B03002_008",
-                  race_nh_2ot1 = "B03002_009",
-                  race_nh_2ot2 = "B03002_010",
-                  race_nh_3ot = "B03002_011",
-                  race_h_tot = "B03002_012",
-                  race_h_wh = "B03002_013",
-                  race_h_bk = "B03002_014",
-                  race_h_na = "B03002_015",
-                  race_h_as = "B03002_016",
-                  race_h_hw = "B03002_017",
-                  race_h_ot = "B03002_018",
-                  race_h_2ot1 = "B03002_019",
-                  race_h_2ot2 = "B03002_020",
-                  race_h_3ot = "B03002_021"
+                  race_nh_2ot1 = "B03002_009", #two or more nh
+                  race_nh_2ot2 = "B03002_010", #two or more including other
+                  race_nh_3ot = "B03002_011", #two races excluding other or 3 and more
+                  race_h = "B03002_012"
                 ), 
                 year = 2018,
                 state = "CA",
-                county = "Alameda"
-              ) 
+                county = COUNTY
+              )
 
 
 
@@ -46,32 +40,8 @@ race <- pop %>% dplyr::select(-moe) %>%
     names_from = "variable",
     values_from = "estimate"
   ) %>% 
-  mutate(
-    share_hisp = race_h_tot/race_tot,
-    share_nh_wh = race_nh_wh/race_tot,
-
-    share_h_wh = race_h_wh/race_tot,
-    share_h_bk = race_h_bk/race_tot,
-    share_h_na = race_h_na/race_tot,
-    share_h_as = race_h_as/race_tot,
-    share_h_hw = race_h_hw/race_tot,
-    share_h_ot = race_h_ot/race_tot,
-    share_h_2ot1 = race_h_2ot1/race_tot,
-    share_h_2ot2 = race_h_2ot2/race_tot,
-    share_h_3ot = race_h_3ot/race_tot,
-    
-    share_nh_wh = race_nh_wh/race_tot,
-    share_nh_bk = race_nh_bk/race_tot,
-    share_nh_na = race_nh_na/race_tot,
-    share_nh_as = race_nh_as/race_tot,
-    share_nh_hw = race_nh_hw/race_tot,
-    share_nh_ot = race_nh_ot/race_tot,
-    share_nh_2ot1 = race_nh_2ot1/race_tot,
-    share_nh_2ot2 = race_nh_2ot2/race_tot,
-    share_nh_3ot = race_nh_3ot/race_tot
-
-  ) %>% 
-  dplyr::select(GEOID, starts_with("share_"))
+  mutate(race_mult = race_nh_2ot1 +race_nh_2ot2 +race_nh_3ot )
+ 
 
 
 
@@ -82,21 +52,15 @@ income <-
     variables =  c(med_income = "B06011_001"), 
     year = 2018,
     state = "CA",
-    county = "Alameda"
+    county = COUNTY
   ) 
 income <- income %>% dplyr::select(-variable, -moe) %>% rename(med_inc = estimate)  
 
 
-acs <- left_join(income, race) %>% dplyr::select(-share_h_hw, -share_nh_hw)
+acs <- left_join(income, race) 
 
 
-#looks like most hispanices put down white or other in race: 
-summary(acs$share_h_wh/acs$share_hisp) #share of hispanics that check white
-summary(acs$share_h_ot/acs$share_hisp) #share of hispanics that check other
-summary((acs$share_h_wh + acs$share_h_ot)/acs$share_hisp) #on average 85-90% hispanics check white or other as race
 
-
-#now what if we want to combine with income?
 
 #can create income deciles (maybe want to do this at state-level? otherwise will be only comparing income within county)
 income_ca <- 
@@ -108,7 +72,8 @@ income_ca <-
   ) 
 
 #finds the 10th, 20th, etc. through 90th percentile of median income across all CA census tracts
-med_income_deciles <- income_ca %>% dplyr::select(-variable, -moe) %>% rename(med_inc = estimate) %>% dplyr::select(med_inc) %>% quantile(seq(0.1,0.9,.1), na.rm = T)  
+#med_income_deciles <- income_ca %>% dplyr::select(-variable, -moe) %>% rename(med_inc = estimate) %>% dplyr::select(med_inc) %>% quantile(seq(0.1,0.9,.1), na.rm = T)  
+med_income_deciles <- income_ca %>% dplyr::select(-variable, -moe) %>% rename(med_inc = estimate) %>% dplyr::select(med_inc) %>% quantile(seq(0.2,0.8,.2), na.rm = T)  
 
 #uses the cutoffs determined above to split the census tracts in this county into whichever deciles they fall for statewide distribution
 acs$income_decile <- statar::xtile(acs$med_inc, cutpoints = med_income_deciles) #creates variable with values 1-10 identifying which decile census tract median income falls into
@@ -126,35 +91,35 @@ pop <-  get_acs(
     race_tot = "B03002_001",
     race_nh_wh = "B03002_003",
     race_nh_bk = "B03002_004",
+    race_nh_na = "B03002_005",
     race_nh_as = "B03002_006",
-    race_h_tot = "B03002_012"
+    race_nh_hw = "B03002_007",
+    race_nh_ot = "B03002_008",
+    race_nh_2ot1 = "B03002_009", #two or more nh
+    race_nh_2ot2 = "B03002_010", #two or more including other
+    race_nh_3ot = "B03002_011", #two races excluding other or 3 and more
+    race_h = "B03002_012"
   ), 
   year = 2018,
   state = "CA"
-) %>% 
+)%>% 
   dplyr::select(-moe) %>% 
   pivot_wider(
     names_from = "variable",
     values_from = "estimate"
-  ) %>% 
-  mutate(
-    share_nh_wh = race_nh_wh/race_tot,
-    share_nh_bk = race_nh_bk/race_tot,
-    share_nh_as = race_nh_as/race_tot,
-    share_h = race_h_tot/race_tot,
-         ) %>% 
-  dplyr::select(GEOID, share_nh_wh, share_nh_bk, share_nh_as, share_h)
-
-cutoffs_nh_wh <-  quantile(pop$share_nh_wh, seq(0.1,0.9,.1), na.rm = T)  
-cutoffs_nh_bk <-  quantile(pop$share_nh_bk, seq(0.1,0.9,.1), na.rm = T)  
-cutoffs_nh_as <-  quantile(pop$share_nh_as, seq(0.1,0.9,.1), na.rm = T)  
-cutoffs_h <-  quantile(pop$share_h, seq(0.1,0.9,.1), na.rm = T)  
+  )%>% 
+  dplyr::select(GEOID, starts_with("race"))
+# 
+# cutoffs_nh_wh <-  quantile(pop$share_nh_wh, seq(0.1,0.9,.1), na.rm = T)  
+# cutoffs_nh_bk <-  quantile(pop$share_nh_bk, seq(0.1,0.9,.1), na.rm = T)  
+# cutoffs_nh_as <-  quantile(pop$share_nh_as, seq(0.1,0.9,.1), na.rm = T)  
+# cutoffs_h <-  quantile(pop$share_h, seq(0.1,0.9,.1), na.rm = T)  
 
 
-acs$white_decile <- statar::xtile(acs$share_nh_wh, cutpoints = cutoffs_nh_wh) #creates variable with values 1-10 identifying which decile census tract median income falls into
-acs$black_decile <- statar::xtile(acs$share_nh_bk, cutpoints = cutoffs_nh_bk) #creates variable with values 1-10 identifying which decile census tract median income falls into
-acs$asian_decile <- statar::xtile(acs$share_nh_as, cutpoints = cutoffs_nh_as) #creates variable with values 1-10 identifying which decile census tract median income falls into
-acs$hispanic_decile <- statar::xtile(acs$share_hisp, cutpoints = cutoffs_h) #creates variable with values 1-10 identifying which decile census tract median income falls into
+# acs$white_decile <- statar::xtile(acs$share_nh_wh, cutpoints = cutoffs_nh_wh) #creates variable with values 1-10 identifying which decile census tract median income falls into
+# acs$black_decile <- statar::xtile(acs$share_nh_bk, cutpoints = cutoffs_nh_bk) #creates variable with values 1-10 identifying which decile census tract median income falls into
+# acs$asian_decile <- statar::xtile(acs$share_nh_as, cutpoints = cutoffs_nh_as) #creates variable with values 1-10 identifying which decile census tract median income falls into
+# acs$hispanic_decile <- statar::xtile(acs$share_hisp, cutpoints = cutoffs_h) #creates variable with values 1-10 identifying which decile census tract median income falls into
 
 #finally combine. eventually can count # people evacuated but here will count total population
 pop <-  get_acs(
@@ -210,7 +175,7 @@ pop <-  get_acs(
   ), 
   year = 2018,
   state = "CA",
-  county = "Alameda"
+  county = COUNTY
 ) %>% dplyr::select(-moe) %>% 
   pivot_wider(
     names_from = "variable",
@@ -235,45 +200,49 @@ pop <-  get_acs(
 acs <- left_join(acs, pop)
 
 
-output <- list()
-output[[1]] <-output[[2]] <- output[[3]] <-output[[4]] <- matrix(nrow = 10, ncol= 10)
 
-for(i in 1:10){
-  
-  for (j in 1:10){
-    
-    output[[1]][i,j]<-sum(acs$pop_total[acs$income_decile == i & acs$white_decile==j], na.rm = T)
-    output[[2]][i,j]<-sum(acs$pop_total[acs$income_decile == i & acs$black_decile==j], na.rm = T)
-    output[[3]][i,j]<-sum(acs$pop_total[acs$income_decile == i & acs$asian_decile==j], na.rm = T)
-    output[[4]][i,j]<-sum(acs$pop_total[acs$income_decile == i & acs$hispanic_decile==j], na.rm = T)
-    
-  }
-}
+#acs <- left_join(acs, evac) #bring in evacuation order
+acs$evac <- round(runif(n = nrow(acs), min = 0, max = 1)) #for now random number for evacuation assignment
+
+acs_byinc <- acs  %>% group_by(income_decile, evac) %>% summarise_at(vars(race_tot:race_mult), sum, na.rm = T)
 
 
-par(mfrow = c(1,4))
-#white
-plot(raster::raster(as.matrix(output[[1]])), axes = F)
-axis(1, at = seq(0.05, .95,.1), labels = 1:10)
-axis(2, at = seq(0.05, .95,.1), labels = 1:10, las = 2, line=-10)
-mtext(side = 3, text = "White",adj = 0)
 
-#black
-plot(raster::raster(as.matrix(output[[2]])), axes = F)
-axis(1, at = seq(0.05, .95,.1), labels = 1:10)
-axis(2, at = seq(0.05, .95,.1), labels = 1:10, las = 2, line=-10)
-mtext(side = 3, text = "Black",adj = 0)
 
-#asian
-plot(raster::raster(as.matrix(output[[3]])), axes = F)
-axis(1, at = seq(0.05, .95,.1), labels = 1:10)
-axis(2, at = seq(0.05, .95,.1), labels = 1:10, las = 2, line=-10)
-mtext(side = 3, text = "Asian",adj = 0)
 
-#hispanic
-plot(raster::raster(as.matrix(output[[4]])), axes = F)
-axis(1, at = seq(0.05, .95,.1), labels = 1:10)
-axis(2, at = seq(0.05, .95,.1), labels = 1:10, las = 2, line=-10)
-mtext(side = 3, text = "Hispanic",adj = 0)
+output0 <- acs_byinc %>% ungroup() %>% 
+          drop_na(income_decile) %>% 
+          filter(evac == 0) %>% 
+          dplyr::select(race_nh_wh, race_h, race_nh_bk, race_nh_as, race_mult) %>% 
+          as.matrix()
 
-write_rds(output, file = "data/race_by_income_example.rds")
+
+output1 <- acs_byinc %>% ungroup() %>% 
+          drop_na(income_decile) %>% 
+          filter(evac == 1) %>% 
+          dplyr::select(race_nh_wh, race_h, race_nh_bk, race_nh_as, race_mult) %>% 
+          as.matrix()
+
+
+
+
+
+
+par(mfrow =c (1,2))
+plot(raster::raster(as.matrix(output0)),  col = rainbow(256)[100:256],axes = F)
+axis(1, at = seq(.1, .9,.2), labels = c("White","Hispanic","Black","Asian","Multiple"))
+axis(2, at = seq(0.05, .95,.1), labels = 10:1, las = 2)
+mtext(side = 1, text = "Race/Ethnicity",cex=1.5,line=3)
+mtext(side = 2, text = "Income Decile",cex=1.5,line=3)
+mtext(side = 3, text ="Evacuated", adj =0, cex=2)
+
+
+plot(raster::raster(as.matrix(output1)),  col = rainbow(256)[100:256],axes = F)
+axis(1, at = seq(.1, .9,.2), labels = c("White","Hispanic","Black","Asian","Multiple"))
+axis(2, at = seq(0.05, .95,.1), labels = 10:1, las = 2)
+mtext(side = 1, text = "Race/Ethnicity",cex=1.5,line=3)
+mtext(side = 3, text ="Not Evacuated", adj =0, cex=2)
+
+
+
+
