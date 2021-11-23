@@ -200,6 +200,8 @@ ct_norder <- read.csv("data/clean/Sonoma Census Tract Evacuation Order Mapping.c
 #count # evac orders per census tract
 ct_norder$n_order <- apply(ct_norder[,paste("evacuation",1:29, sep = "")], 1, function(x){sum(!is.na(x))})
 ct_norder <- ct_norder %>% dplyr::filter(n_order > 0) %>% dplyr::select(GEOID, n_order)
+write_rds(ct_norder, file = "data/clean/Sonoma_evacuation_order_counts_by_tract.rds",compress = "gz")
+
 
 ct_acs <- left_join(acs, ct_norder) %>% mutate(n_order = replace(n_order, is.na(n_order), 0))
 
