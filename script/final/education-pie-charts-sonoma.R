@@ -1,3 +1,5 @@
+#checked 12/30
+
 source("script/0-packages-and-functions.R")
 library(tidycensus)
 library(tidyverse)
@@ -183,17 +185,18 @@ ct_acs <- left_join(acs, ct_norder) %>% mutate(n_order = replace(n_order, is.na(
 
 ggplot(ct_acs$GEOID, ct_acs$n_order)
 #png(filename = "evac.png", width = 800, height = 400) 
+# 
+# sf <- get_acs(geography = "tract", 
+#               state = "CA", 
+#               county = "Sonoma", 
+#               geometry = TRUE)
 
-sf <- get_acs(geography = "tract", 
-              state = "CA", 
-              county = "Sonoma", 
-              geometry = TRUE)
-
-ggplot(sf, aes(fill = ct_acs$n_order)) + 
-  geom_sf() + 
-  theme_void() + 
-  scale_fill_viridis_c(labels = scales::label_number(), option = 'magma') +
-  theme(plot.margin=unit(c(1,1,1.5,1.2),"cm"))
+# note: this likely gives wrong plot  but I don't think it's being used?
+# ggplot(sf, aes(fill = ct_acs$n_order)) + 
+#   geom_sf() + 
+#   theme_void() + 
+#   scale_fill_viridis_c(labels = scales::label_number(), option = 'magma') +
+#   theme(plot.margin=unit(c(1,1,1.5,1.2),"cm"))
 
 #dev.off()
 #######################################################################################
@@ -261,7 +264,7 @@ pie(pieData_evacuated,
 )
 
 #Second Plot-Whole County Population 
-plot2<-pie(as.numeric(pieData_county), 
+pie(as.numeric(pieData_county), 
            col= c("grey25" ,"grey50", "grey75", "grey100"), 
            labels = paste(c("Highschool Diploma/GED or less", "Bachelor's Degree or Some College", "Master's Degree", "Professional School or Doctorate Degree"), " (",round(as.numeric(pieData_county)*100),"%)",sep="")
 )

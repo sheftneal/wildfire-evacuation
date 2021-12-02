@@ -1,3 +1,5 @@
+#fixed 12/1
+
 source("script/0-packages-and-functions.R")
 library(tidycensus)
 
@@ -236,20 +238,34 @@ evacuated_demo <- ct_acs %>%
 ############################################################################################################
 # Plots for English Proficiency Sonoma County Maps:
 #Run Line Below!
-Sonoma <- get_acs(geography = "tract", state = "06", county = "Sonoma", geometry = TRUE, variables = "B01002_001")
+
 png(filename = "English.png", width=800, height=400)
 # graph the percentage of each census tract that is not proficient in English on a map of Sonoma
+
+pop1 <- pop1 %>% rename(NAME1=NAME)
+Sonoma <- get_acs(geography = "tract", state = "06", county = "Sonoma", geometry = TRUE, variables = "B01002_001") %>% 
+          left_join(pop1)
+
 Sonoma %>%
-  ggplot(aes(fill = 100 - pop1$perc_proficient)) + 
+#  ggplot(aes(fill = 100 - pop1$perc_proficient)) +  #can't use "pop1" to fill colors and "Sonoma" to plot becuase census tracts in different orders in two data objects
+  ggplot(aes(fill = 100 - perc_proficient)) +  #can't use "pop1" to fill colors and "Sonoma" to plot becuase census tracts in different orders in two data objects
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
   scale_fill_viridis_c(option = "magma")
 dev.off()
 
+
+
+
+pop2 <- pop2 %>% rename(NAME1=NAME)
+Sonoma <- get_acs(geography = "tract", state = "06", county = "Sonoma", geometry = TRUE, variables = "B01002_001") %>% 
+  left_join(pop2)
+
 png(filename = "Spanish.png", width=800, height=400)
 # graph the percentage of each census tract that is only proficient in Spanish on a map of Sonoma
 Sonoma %>%
-  ggplot(aes(fill = pop2$perc_only_proficient_spanish)) + 
+#  ggplot(aes(fill = pop2$perc_only_proficient_spanish)) + 
+  ggplot(aes(fill = perc_only_proficient_spanish)) + #plot from column in Sonoma after joinining
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
   scale_fill_viridis_c(option = "magma")

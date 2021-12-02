@@ -1,3 +1,5 @@
+#checked 12/1
+
 source("script/0-packages-and-functions.R")
 library(tidycensus)
 

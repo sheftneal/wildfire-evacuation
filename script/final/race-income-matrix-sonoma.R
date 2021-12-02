@@ -1,11 +1,11 @@
-#fixed 12/1
+#created 12/1
 
 source("script/0-packages-and-functions.R")
 library(tidycensus)
 library(viridis)
 
 census_api_key("f5c6e020a6aae7ba5420a4051ad53eee38c621fa")
-COUNTY = "Fresno"
+COUNTY = "Sonoma"
 
 #read in census data
 pop <-  get_acs(
@@ -194,19 +194,19 @@ acs <- left_join(acs, pop)
 ################################################################################################################################  
 
 # Read in census tract mapping
-ct <- read.csv("data/clean/Fresno_Census_FilledIn.csv", skip = 2) %>% 
+ct <- read.csv("data/clean/Sonoma Census Tract Evacuation Order Mapping.csv") %>% 
   dplyr::select(GEOID, NAME, starts_with("evacuation")) %>% 
   mutate(GEOID = as.character(GEOID))
 
 
 # Count num evac orders per census tract
-ct$n_order <- apply(ct[,paste("evacuation",1:12, sep = "")], 1, function(x){sum(!is.na(x))})
+ct$n_order <- apply(ct[,paste("evacuation",1:29, sep = "")], 1, function(x){sum(!is.na(x))})
 
 # Reorganize so each row is a census tract - evacuation ID combination
 ct <- ct %>% 
   dplyr::filter(n_order > 0) %>%  #filter to census tracts with orders
   pivot_longer(
-    cols = evacuation1:evacuation14,
+    cols = evacuation1:evacuation29,
     names_to = "Evacuation.Index",
     values_to = "Evacuation.ID"
   ) %>% 
@@ -215,7 +215,7 @@ ct <- ct %>%
 
 
 # Bring in and clean up evacuation order database
-evacs <- read.csv("data/clean/Wildfire Evacuation Order Database - Fresno & Madera County Fires.csv") %>% 
+  evacs <- read.csv("data/clean/Wildfire Evacuation Order Database - Sonoma County Fires.csv") %>% 
   dplyr::select(-starts_with("X")) %>% 
   dplyr::select(Evacuation.ID, FIRE_NAME, GIS_ACRES,evacuation.order.type,evac_date_issue)
 
@@ -274,17 +274,18 @@ annual_evacs_bypop[is.na(annual_evacs_bypop)] <- 0
 #evacuated at any point age distribution
 
 #read in data
-ct_norder <- read.csv("data/clean/Fresno_Census_FilledIn.csv", skip = 2) %>% #skip = 2 because first two rows of excel data file are not data we want to read in
+ct_norder <- read.csv("data/clean/Sonoma Census Tract Evacuation Order Mapping.csv") %>% #skip = 2 because first two rows of excel data file are not data we want to read in
   dplyr::select(GEOID, NAME, starts_with("evacuation")) %>% #keep the variables GEOID, NAME, and anything that begins with "evacuation"
   mutate(GEOID = as.character(GEOID)) #convert GEOID from number to character since other data sets we're using store this var as character. all need to be same format for merges.
 
 #count # evac orders per census tract
 
 #define a new variable called "n_order" that takes the sum across rows for the 14 evacuation variable
-ct_norder$n_order <- apply(ct_norder[,paste("evacuation",1:14, sep = "")], 1, function(x){sum(!is.na(x))}) #1:14 because data frame I'm using has 14 evacuation variables
+ct_norder$n_order <- apply(ct_norder[,paste("evacuation",1:29, sep = "")], 1, function(x){sum(!is.na(x))}) #1:14 because data frame I'm using has 14 evacuation variables
 #you could get the same thing as line 217 in many different ways. For example:
 number_orders <- ct_norder %>% dplyr::select(starts_with("evacuation")) %>% rowSums(na.rm = T)
 ct_norder <- ct_norder %>% mutate(n_order = number_orders)
+ct_norder$evac <- as.numeric(ct_norder$n_order>0)
 
 #only keep census tracts with orders
 ct_norder <- ct_norder %>% dplyr::filter(n_order > 0) %>% dplyr::select(GEOID, n_order)
@@ -292,7 +293,8 @@ ct_norder <- ct_norder %>% dplyr::filter(n_order > 0) %>% dplyr::select(GEOID, n
 #combine acs data with the count of evac orders by census tract
 #but the n_order variable will be missing for every census tract that never had a fire
 # so those values are currently missing after the join but we want all of those values to be 0
-ct_acs <- left_join(acs, ct_norder) %>% mutate(evac = replace(n_order, is.na(n_order), 0), evac = replace(evac, evac>0, 1))
+acs$GEOID <- substr(acs$GEOID,2,100)
+ct_acs <- left_join(acs, ct_norder) %>% mutate(evac = replace(n_order, is.na(n_order), 0))
 
 acs_byinc <- ct_acs  %>% group_by(income_decile, evac) %>% summarise_at(vars(race_tot:race_mult), sum, na.rm = T)
 
@@ -310,34 +312,28 @@ output1 <- acs_byinc %>% ungroup() %>%
   dplyr::select(race_nh_wh, race_h, race_nh_bk, race_nh_as, race_mult) %>% 
   as.matrix()
 
-output1 <- rbind(output1[1,], output1, output1[1,])
-output1[1,]<-0
-output1[5,]<-0
+
+# race/income matrix plots
+
+par(mfrow =c (1,2))
+plot(raster::raster(as.matrix(output0)), col = inferno(256)[240:80],axes = F) # col = rainbow(256)[100:256]
+axis(1, at = seq(.1, .9,.2), labels = c("White","Hispanic","Black","Asian","Multiple"))
+#axis(2, at = seq(0.05, .95,.1), labels = 10:1, las = 2)
+axis(2, at = seq(0.1, .9,.2), labels = 5:1, las = 2)
+mtext(side = 1, text = "Race/Ethnicity",cex=1.5,line=3)
+mtext(side = 2, text = "Income Quintile",cex=1.5,line=3)
+mtext(side = 3, text ="Evacuated", adj =0, cex=2)
 
 
-# income total population pie chart
-inc_dist <- as.data.frame(output0 + output1) # total county
-quint1 <- sum(inc_dist[1,])
-quint2 <- sum(inc_dist[2,])
-quint3 <- sum(inc_dist[3,])
-quint4 <- sum(inc_dist[4,])
-quint5 <- sum(inc_dist[5,])
-total <- quint1 + quint2 + quint3 + quint4 + quint5
-slices <- c(quint1 / total, quint2 / total, quint3 / total, quint4 / total, quint5 / total)
-lbls = paste(c("1st quintile", "2nd quintile", "3rd quintile", "4th quintile", "5th quintile"), " (", round(slices*100), "%)", sep="") 
-pie(slices, labels = lbls, main="Income Breakdown of Fresno County", col = c("grey20", "grey40", "grey60", "grey80", "grey100"))
 
 
-# income evacuated population pie chart
-inc_dist <- as.data.frame(output1) # just the evacuated population
-quint1 <- sum(inc_dist[1,])
-quint2 <- sum(inc_dist[2,])
-quint3 <- sum(inc_dist[3,])
-quint4 <- sum(inc_dist[4,])
-quint5 <- sum(inc_dist[5,])
-total <- quint1 + quint2 + quint3 + quint4 + quint5
-slices <- c(quint1 / total, quint2 / total, quint3 / total, quint4 / total, quint5 / total)
-lbls = paste(c("1st quintile", "2nd quintile", "3rd quintile", "4th quintile", "5th quintile"), " (", round(slices*100), "%)", sep="") 
-pie(slices, labels = lbls, main="Income Breakdown of Fresno County", col = c("grey20", "grey40", "grey60", "grey80", "grey100"))
+# race/income matrix plots
 
+plot(raster::raster(as.matrix(output1)), col = inferno(256)[240:80],axes = F) # col = rainbow(256)[100:256]
+axis(1, at = seq(.1, .9,.2), labels = c("White","Hispanic","Black","Asian","Multiple"))
+#axis(2, at = seq(0.05, .95,.1), labels = 10:1, las = 2)
+axis(2, at = seq(0.1, .9,.2), labels = 5:1, las = 2)
+mtext(side = 1, text = "Race/Ethnicity",cex=1.5,line=3)
+mtext(side = 2, text = "Income Quintile",cex=1.5,line=3)
+mtext(side = 3, text ="Evacuated", adj =0, cex=2)
 

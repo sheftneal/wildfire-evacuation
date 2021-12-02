@@ -1,3 +1,5 @@
+#fixed 12/1
+
 source("script/0-packages-and-functions.R")
 library(tidycensus)
 
@@ -211,7 +213,7 @@ ct_norder <- ct_norder %>% dplyr::filter(n_order > 0) %>% dplyr::select(GEOID, n
 # so those values are currently missing after the join but we want all of those values to be 0
 ct_acs <- left_join(acs, ct_norder) %>% mutate(n_order = replace(n_order, is.na(n_order), 0))
 
-#no take this data frame and summarise across all the pop variables.
+#now take this data frame and summarise across all the pop variables.
 #pop1:pop_total means take every column including and to the right of pop1 through the column pop_total and sum them 
 #then we calculate pop shares
 county_demo <- ct_acs %>% 
@@ -239,15 +241,35 @@ evacuated_demo <- ct_acs %>%
 # Plots:
 
 # graph the percentage of each census tract that is proficient in english on a map of Fresno
+
+#fresno object is not defined in this script so I defined it as it had been defined in previous scripts:
+
+fresno <- get_acs(geography = "tract", state = "06", county = "Fresno",
+                  geometry = TRUE, variables = "B06011_001")
+
+#but then below script is wrong because it uses pop1 to fill colors and rows of pop1 are not in same order as rows of fresno
+#so colors don't correctly correspond to plotted tracts
+
+pop1 <- pop1 %>% rename(NAME1 = NAME) #to make sure NAME doesn't get used to match only censust tract (not sure what NAME is it might be ok)
+fresno <- get_acs(geography = "tract", state = "06", county = "Fresno",
+                  geometry = TRUE, variables = "B06011_001") %>% 
+        left_join( pop1)
+
 fresno %>%
-  ggplot(aes(fill = 100 - pop1$perc_proficient)) + 
+  ggplot(aes(fill = 100 - perc_proficient)) + 
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
   scale_fill_viridis_c(option = "magma")
 
 # graph the percentage of each census tract that is only proficient in spanish on a map of Fresno
+
+pop2 <- pop2 %>% rename(NAME1 = NAME)
+fresno <- get_acs(geography = "tract", state = "06", county = "Fresno",
+                  geometry = TRUE, variables = "B06011_001") %>% 
+          left_join( pop2)
+
 fresno %>%
-  ggplot(aes(fill = pop2$perc_only_proficient_spanish)) + 
+  ggplot(aes(fill =perc_only_proficient_spanish)) + 
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
   scale_fill_viridis_c(option = "magma")

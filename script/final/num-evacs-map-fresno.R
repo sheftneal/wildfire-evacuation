@@ -1,3 +1,5 @@
+#checked 12/30
+
 source("script/0-packages-and-functions.R")
 library(tidycensus)
 
@@ -81,17 +83,19 @@ pop <- pop %>% dplyr::select(-moe) %>%
   dplyr::select(GEOID, starts_with("pop"))
 
 all.equal(rowSums(pop[,paste("pop",1:9, sep = "")]), pop$pop_total)
+# 
+# income <- 
+#   get_acs(
+#     geography = "tract", 
+#     variables =  c(med_income = "B06011_001"), 
+#     year = 2018,
+#     state = "CA",
+#     county = "Fresno"
+#   ) 
+# income <- income %>% dplyr::select(-variable, -moe) %>% rename(med_inc = estimate)  
+# acs <- left_join(income, pop)
 
-income <- 
-  get_acs(
-    geography = "tract", 
-    variables =  c(med_income = "B06011_001"), 
-    year = 2018,
-    state = "CA",
-    county = "Fresno"
-  ) 
-income <- income %>% dplyr::select(-variable, -moe) %>% rename(med_inc = estimate)  
-acs <- left_join(income, pop)
+acs <- pop
 
 # Read in census tract mapping
 ct <- read.csv("data/clean/Fresno_Census_FilledIn.csv", skip = 2) %>% 

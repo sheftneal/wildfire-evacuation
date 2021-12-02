@@ -1,3 +1,5 @@
+#checked 12/30
+
 source("script/0-packages-and-functions.R")
 library(tidycensus)
 library(tidyverse)
@@ -167,12 +169,12 @@ ct_norder <- ct_norder %>% dplyr::filter(n_order > 0) %>% dplyr::select(GEOID, n
 # so those values are currently missing after the join but we want all of those values to be 0
 ct_acs <- left_join(acs, ct_norder) %>% mutate(n_order = replace(n_order, is.na(n_order), 0))
 
-
-ggplot(sf, aes(fill = ct_acs$n_order)) + 
-  geom_sf() + 
-  theme_void() + 
-  scale_fill_viridis_c(labels = scales::label_number(), option = 'magma') +
-  theme(plot.margin=unit(c(1,1,1.5,1.2),"cm"))
+# 
+# ggplot(sf, aes(fill = ct_acs$n_order)) + 
+#   geom_sf() + 
+#   theme_void() + 
+#   scale_fill_viridis_c(labels = scales::label_number(), option = 'magma') +
+#   theme(plot.margin=unit(c(1,1,1.5,1.2),"cm"))
 
 #dev.off()
 #######################################################################################

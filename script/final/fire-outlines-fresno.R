@@ -1,3 +1,5 @@
+#checked 12/30
+
 source("script/0-packages-and-functions.R")
 
 # load data

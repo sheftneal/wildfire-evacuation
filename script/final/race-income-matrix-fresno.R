@@ -1,3 +1,5 @@
+#checked 12/1
+
 source("script/0-packages-and-functions.R")
 library(tidycensus)
 library(viridis)
@@ -309,21 +311,6 @@ output1 <- acs_byinc %>% ungroup() %>%
   as.matrix()
 
 
-
-# pie chart of county racial distribution
-race_dist <- as.data.frame(output0 + output1) # county pop
-race_dist <- as.data.frame(output0) # <-- this would be to get the pie chart for the evacuated pop
-white <- sum(race_dist$race_nh_wh)
-hispanic <- sum(race_dist$race_h)
-black <- sum(race_dist$race_nh_bk)
-asian <- sum(race_dist$race_nh_as)
-multi <- sum(race_dist$race_mult)
-total <- white + hispanic + black + asian + multi
-slices <- c(white / total, hispanic / total, black / total, asian / total, multi / total)
-lbls = paste(c("White", "Hispanic", "Black", "Asian", "Multiracial"), " (", round(slices*100), "%)", sep="") 
-pie(slices, labels = lbls, main="Racial Breakdown of Fresno County", col = c("grey20", "grey40", "grey60", "grey80", "grey100"))
-
-
 # race/income matrix plots
 
 par(mfrow =c (1,2))
@@ -334,3 +321,17 @@ axis(2, at = seq(0.1, .9,.2), labels = 5:1, las = 2)
 mtext(side = 1, text = "Race/Ethnicity",cex=1.5,line=3)
 mtext(side = 2, text = "Income Quintile",cex=1.5,line=3)
 mtext(side = 3, text ="Evacuated", adj =0, cex=2)
+
+
+
+
+# race/income matrix plots
+
+plot(raster::raster(as.matrix(output1)), col = inferno(256)[240:80],axes = F) # col = rainbow(256)[100:256]
+axis(1, at = seq(.1, .9,.2), labels = c("White","Hispanic","Black","Asian","Multiple"))
+#axis(2, at = seq(0.05, .95,.1), labels = 10:1, las = 2)
+axis(2, at = seq(0.1, .9,.2), labels = 5:1, las = 2)
+mtext(side = 1, text = "Race/Ethnicity",cex=1.5,line=3)
+mtext(side = 2, text = "Income Quintile",cex=1.5,line=3)
+mtext(side = 3, text ="Evacuated", adj =0, cex=2)
+

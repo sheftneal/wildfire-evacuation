@@ -1,3 +1,5 @@
+#checked 12/30
+
 #Median Income Sonoma County Map 
 Sonoma <- get_acs(geography = "tract", state = "06", county = "Sonoma",
                   geometry = TRUE, variables = "B06011_001")
