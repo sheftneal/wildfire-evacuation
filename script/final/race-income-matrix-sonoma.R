@@ -293,8 +293,7 @@ ct_norder <- ct_norder %>% dplyr::filter(n_order > 0) %>% dplyr::select(GEOID, n
 #combine acs data with the count of evac orders by census tract
 #but the n_order variable will be missing for every census tract that never had a fire
 # so those values are currently missing after the join but we want all of those values to be 0
-acs$GEOID <- substr(acs$GEOID,2,100)
-ct_acs <- left_join(acs, ct_norder) %>% mutate(evac = replace(n_order, is.na(n_order), 0))
+ct_acs <- left_join(acs, ct_norder) %>% mutate(evac = replace(n_order, is.na(n_order), 0), evac = replace(evac, evac>0, 1))
 
 acs_byinc <- ct_acs  %>% group_by(income_decile, evac) %>% summarise_at(vars(race_tot:race_mult), sum, na.rm = T)
 
@@ -311,7 +310,8 @@ output1 <- acs_byinc %>% ungroup() %>%
   filter(evac > 0) %>% 
   dplyr::select(race_nh_wh, race_h, race_nh_bk, race_nh_as, race_mult) %>% 
   as.matrix()
-
+output1 <- rbind(output1[1,],output1)
+output1[1,]<-0
 
 # race/income matrix plots
 
@@ -322,7 +322,7 @@ axis(1, at = seq(.1, .9,.2), labels = c("White","Hispanic","Black","Asian","Mult
 axis(2, at = seq(0.1, .9,.2), labels = 5:1, las = 2)
 mtext(side = 1, text = "Race/Ethnicity",cex=1.5,line=3)
 mtext(side = 2, text = "Income Quintile",cex=1.5,line=3)
-mtext(side = 3, text ="Evacuated", adj =0, cex=2)
+mtext(side = 3, text ="Total County", adj =0, cex=2)
 
 
 
@@ -335,5 +335,5 @@ axis(1, at = seq(.1, .9,.2), labels = c("White","Hispanic","Black","Asian","Mult
 axis(2, at = seq(0.1, .9,.2), labels = 5:1, las = 2)
 mtext(side = 1, text = "Race/Ethnicity",cex=1.5,line=3)
 mtext(side = 2, text = "Income Quintile",cex=1.5,line=3)
-mtext(side = 3, text ="Evacuated", adj =0, cex=2)
+mtext(side = 3, text ="Evacuated Population", adj =0, cex=2)
 

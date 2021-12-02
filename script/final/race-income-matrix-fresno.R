@@ -320,7 +320,7 @@ axis(1, at = seq(.1, .9,.2), labels = c("White","Hispanic","Black","Asian","Mult
 axis(2, at = seq(0.1, .9,.2), labels = 5:1, las = 2)
 mtext(side = 1, text = "Race/Ethnicity",cex=1.5,line=3)
 mtext(side = 2, text = "Income Quintile",cex=1.5,line=3)
-mtext(side = 3, text ="Evacuated", adj =0, cex=2)
+mtext(side = 3, text ="Total County", adj =0, cex=2)
 
 
 
@@ -333,5 +333,5 @@ axis(1, at = seq(.1, .9,.2), labels = c("White","Hispanic","Black","Asian","Mult
 axis(2, at = seq(0.1, .9,.2), labels = 5:1, las = 2)
 mtext(side = 1, text = "Race/Ethnicity",cex=1.5,line=3)
 mtext(side = 2, text = "Income Quintile",cex=1.5,line=3)
-mtext(side = 3, text ="Evacuated", adj =0, cex=2)
+mtext(side = 3, text ="Evacuated Population", adj =0, cex=2)
 
