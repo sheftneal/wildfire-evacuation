@@ -166,4 +166,4 @@ lines(annual_evacs_bypop$evac_year, annual_evacs_bypop$pop_total, col = 'black',
 points(annual_evacs_bypop$evac_year, annual_evacs_bypop$pop_total, pch = 16, cex = 2)
 axis(1, tick = T, at = 2012:2020)
 axis(2, tick = T, las = 2, at = seq(0, 120000, 20000), labels = c(0, paste(seq(20,120, 20), ",000", sep = "")))
-mtext(side = 3, text = "Number of People Living in Evacuated Census Tracts in Fresno County vs Time", adj = 0, cex =2,line =1 )
+mtext(side = 3, text = "Number of People Living in Evacuated Census Tracts in Fresno County vs Time", adj = 0, cex =1.1,line =1 )

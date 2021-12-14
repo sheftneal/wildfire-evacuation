@@ -259,7 +259,7 @@ fresno %>%
   ggplot(aes(fill = 100 - perc_proficient)) + 
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
-  scale_fill_viridis_c(option = "magma")
+  scale_fill_viridis_c(option = "magma", name = "Percentage that is not proficient in English")
 
 # graph the percentage of each census tract that is only proficient in spanish on a map of Fresno
 

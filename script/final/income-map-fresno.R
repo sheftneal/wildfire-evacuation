@@ -11,4 +11,4 @@ fresno %>%
   ggplot(aes(fill = estimate)) + 
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
-  scale_fill_viridis_c(option = "magma")
+  scale_fill_viridis_c(option = "magma", name = "Median Income")

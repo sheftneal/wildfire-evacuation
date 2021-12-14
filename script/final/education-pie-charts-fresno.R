@@ -240,12 +240,13 @@ pie(pieData_evacuated,
     col= c("grey25" ,"grey50", "grey75", "grey100"), 
     labels = paste(c("Highschool Diploma/GED or less", "Bachelor's Degree or Some College", "Master's Degree", "Professional School or Doctorate Degree"), " (",round(pieData_evacuated*100),"%)",sep="")
 )
+#mtext(side = 3, text = "Evacuated Population",adj = 0, cex = 1.5)    
 
 #Second Plot-Whole County Population 
 plot2<-pie(as.numeric(pieData_county), 
            col= c("grey25" ,"grey50", "grey75", "grey100"),
            labels = paste(c("Highschool Diploma/GED or less", "Bachelor's Degree or Some College", "Master's Degree", "Professional School or Doctorate Degree"), " (",round(as.numeric(pieData_county)*100),"%)",sep="")
 )
+#mtext(side = 3, text = "Total County Population",adj = 0, cex = 1.5)
 
-mtext(side = 3, text = "Education Distribution of Evacuated Populations",adj = 0, cex = 3)    
 #dev.off()

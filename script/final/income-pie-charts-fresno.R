@@ -325,7 +325,7 @@ quint5 <- sum(inc_dist[5,])
 total <- quint1 + quint2 + quint3 + quint4 + quint5
 slices <- c(quint1 / total, quint2 / total, quint3 / total, quint4 / total, quint5 / total)
 lbls = paste(c("1st quintile", "2nd quintile", "3rd quintile", "4th quintile", "5th quintile"), " (", round(slices*100), "%)", sep="") 
-pie(slices, labels = lbls, main="Income Breakdown of Fresno County", col = c("grey20", "grey40", "grey60", "grey80", "grey100"))
+pie(slices, labels = lbls, main="Total County Population", col = c("grey20", "grey40", "grey60", "grey80", "grey100"))
 
 
 # income evacuated population pie chart
@@ -337,7 +337,8 @@ quint4 <- sum(inc_dist[4,])
 quint5 <- sum(inc_dist[5,])
 total <- quint1 + quint2 + quint3 + quint4 + quint5
 slices <- c(quint1 / total, quint2 / total, quint3 / total, quint4 / total, quint5 / total)
-lbls = paste(c("1st quintile", "2nd quintile", "3rd quintile", "4th quintile", "5th quintile"), " (", round(slices*100), "%)", sep="") 
-pie(slices, labels = lbls, main="Income Breakdown of Fresno County", col = c("grey20", "grey40", "grey60", "grey80", "grey100"))
+#lbls = paste(c("1st quintile", "2nd quintile", "3rd quintile", "4th quintile", "5th quintile"), " (", round(slices*100), "%)", sep="") 
+lbls = paste(c("1st & 5th quintiles", "2nd quintile", "3rd quintile", "4th quintile"), " (", round(slices*100), "%)", sep="") 
+pie(slices, labels = lbls, main="Evacuated Population", col = c("grey20", "grey40", "grey60", "grey80", "grey100"))
 
 

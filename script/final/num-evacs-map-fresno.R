@@ -158,4 +158,4 @@ fresno %>%
   ggplot(aes(fill = num_evacuation_orders)) + 
   geom_sf(color = NA) + 
   coord_sf(crs = 26911) + 
-  scale_fill_viridis_c(option = "magma")
+  scale_fill_viridis_c(option = "magma", name = "Num Evacs")
